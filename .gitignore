@@ -1,0 +1,11 @@
+# Firebase service account key — never commit this
+scripts/serviceAccountKey.json
+
+# Scripts directory (one-time import tools, not needed for the site)
+scripts/
+
+# Claude Code local settings
+.claude/
+
+# Node dependencies
+node_modules/

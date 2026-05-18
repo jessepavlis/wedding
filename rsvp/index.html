@@ -13,8 +13,8 @@
   <nav>
     <ul>
       <li><a href="/wedding">Home</a></li>
-      <!-- Venue temporarily disabled -->
-      <!-- Amenities temporarily disabled -->
+      <li><a href="/wedding/venue">Venue</a></li>
+      <li><a href="/wedding/amenities">Amenities</a></li>
       <li><a href="/wedding/registry">Registry</a></li>
       <li><a href="/wedding/rsvp" class="active">RSVP</a></li>
     </ul>
@@ -22,34 +22,93 @@
 
   <main class="page-main">
     <header class="page-header">
-      <p class="page-eyebrow">Coming soon</p>
+      <p class="page-eyebrow">August 22, 2026</p>
       <h1>RSVP</h1>
-      <p class="page-subtitle">RSVPs will open shortly. Please check back soon.</p>
+      <p class="page-subtitle" id="rsvp-subtitle">Find your name below to get started.</p>
     </header>
-    </section>
+
+    <div id="rsvp-form-wrap">
+      <div class="rsvp-section">
+
+        <!-- Guest lookup -->
+        <div class="form-group" id="lookup-group">
+          <label for="guest-search">Find your invitation</label>
+          <div class="guest-search-wrap">
+            <input type="text" id="guest-search" placeholder="Start typing your name…" autocomplete="off" />
+            <div class="guest-search-results" id="guest-results"></div>
+          </div>
+        </div>
+
+        <!-- Selected guest confirmation -->
+        <div class="guest-found-wrap" id="guest-found-wrap" style="display:none">
+          <span class="guest-found-name" id="guest-found-name"></span>
+          <span class="guest-found-check">✓ Found</span>
+          <button type="button" class="guest-change-btn" id="guest-change-btn">Change</button>
+        </div>
+
+        <!-- Form fields — revealed after guest is selected -->
+        <div id="rsvp-fields" style="display:none">
+
+          <div class="form-group">
+            <label>Will you be joining us?</label>
+            <div class="radio-group">
+              <label class="radio-label">
+                <input type="radio" name="attending" value="yes" /> Yes, I'll be there
+              </label>
+              <label class="radio-label">
+                <input type="radio" name="attending" value="no" /> Unable to attend
+              </label>
+            </div>
+          </div>
+
+          <div class="form-group" id="guests-group" style="display:none">
+            <label for="guests">Number of guests</label>
+            <select id="guests"></select>
+          </div>
+
+          <div class="form-group" id="meal-choices-group" style="display:none">
+            <label>Meal selection</label>
+            <div id="meal-choices-container"></div>
+          </div>
+
+          <p id="form-error" class="form-error"></p>
+          <button id="submit-btn" class="btn-primary" onclick="submitRSVP()">Send RSVP</button>
+        </div>
+
+      </div>
+    </div>
+
+    <div id="rsvp-success" class="rsvp-success" style="display:none">
+      <div class="success-icon">✦</div>
+      <h2>Thank you!</h2>
+      <p id="success-message">We can't wait to celebrate with you.</p>
+      <a href="/wedding" class="btn-outline" style="margin-top:1rem;">Back to Home</a>
+    </div>
   </main>
 
   <footer>
     <p data-wc="footer">Jesse & Lisa · August 22, 2026</p>
   </footer>
 
-  <!-- Firebase SDK -->
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-    import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app-check.js";
+    import { initializeApp }       from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getFirestore,
+             collection,
+             getDocs,
+             addDoc,
+             serverTimestamp }     from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { initializeAppCheck,
+             ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app-check.js";
 
-    // ─── REPLACE THESE WITH YOUR FIREBASE CONFIG ───────────────────────────────
     const firebaseConfig = {
-    apiKey: "AIzaSyAvc4lTGu0bLa68GQRfP4L1JkncKwCs3Us",
-    authDomain: "jesse-lisa-wedding.firebaseapp.com",
-    projectId: "jesse-lisa-wedding",
-    storageBucket: "jesse-lisa-wedding.firebasestorage.app",
-    messagingSenderId: "471909172891",
-    appId: "1:471909172891:web:23af9d0bebb19aa312a83e",
-    measurementId: "G-2LWV3LNJFX"
-  };
-    // ───────────────────────────────────────────────────────────────────────────
+      apiKey:            "AIzaSyAvc4lTGu0bLa68GQRfP4L1JkncKwCs3Us",
+      authDomain:        "jesse-lisa-wedding.firebaseapp.com",
+      projectId:         "jesse-lisa-wedding",
+      storageBucket:     "jesse-lisa-wedding.firebasestorage.app",
+      messagingSenderId: "471909172891",
+      appId:             "1:471909172891:web:23af9d0bebb19aa312a83e",
+      measurementId:     "G-2LWV3LNJFX"
+    };
 
     const app = initializeApp(firebaseConfig);
     if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
@@ -61,6 +120,101 @@
     });
     const db = getFirestore(app);
 
+    // ── Guest list ────────────────────────────────────────────────────────────
+    let allGuests = [];
+    let selectedGuest = null;
+
+    async function loadGuests() {
+      const snap = await getDocs(collection(db, 'guests'));
+      allGuests = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    }
+
+    // Token-based search: strips "&" and "guest" so "kevin ridge" matches
+    // "Kevin & Mana Ridge", and typing "guest" matches nothing.
+    function searchGuests(query) {
+      const IGNORE = new Set(['guest', '&']);
+      const terms = query.toLowerCase().split(/\s+/).filter(t => t && !IGNORE.has(t));
+      if (!terms.length) return [];
+      return allGuests.filter(g => {
+        const searchable = g.nameLower.replace(/&/g, ' ').replace(/\bguest\b/gi, ' ').replace(/\s+/g, ' ').trim();
+        return terms.every(t => searchable.includes(t));
+      });
+    }
+
+    // ── Search UI ─────────────────────────────────────────────────────────────
+    const searchInput  = document.getElementById('guest-search');
+    const resultsBox   = document.getElementById('guest-results');
+    const lookupGroup  = document.getElementById('lookup-group');
+    const foundWrap    = document.getElementById('guest-found-wrap');
+    const foundName    = document.getElementById('guest-found-name');
+    const changeBtn    = document.getElementById('guest-change-btn');
+    const rsvpFields   = document.getElementById('rsvp-fields');
+
+    searchInput.addEventListener('input', () => {
+      const q = searchInput.value.trim();
+      if (q.length < 2) { resultsBox.innerHTML = ''; resultsBox.classList.remove('open'); return; }
+      const matches = searchGuests(q);
+      resultsBox.innerHTML = '';
+      if (!matches.length) {
+        const el = document.createElement('div');
+        el.className = 'guest-result-item no-results';
+        el.textContent = 'No matches found';
+        resultsBox.appendChild(el);
+      } else {
+        matches.forEach(g => {
+          const el = document.createElement('div');
+          el.className = 'guest-result-item';
+          el.textContent = g.name;
+          el.addEventListener('click', () => selectGuest(g));
+          resultsBox.appendChild(el);
+        });
+      }
+      resultsBox.classList.add('open');
+    });
+
+    document.addEventListener('click', e => {
+      if (!searchInput.contains(e.target) && !resultsBox.contains(e.target)) {
+        resultsBox.classList.remove('open');
+      }
+    });
+
+    function selectGuest(guest) {
+      selectedGuest = guest;
+      resultsBox.classList.remove('open');
+      lookupGroup.style.display = 'none';
+      foundName.textContent = guest.name;
+      foundWrap.style.display = 'flex';
+      rsvpFields.style.display = 'block';
+      populateGuestCount(guest.maxGuests);
+      // Reset form state
+      document.querySelectorAll('input[name="attending"]').forEach(r => r.checked = false);
+      document.getElementById('guests-group').style.display = 'none';
+      document.getElementById('meal-choices-group').style.display = 'none';
+      document.getElementById('form-error').textContent = '';
+    }
+
+    changeBtn.addEventListener('click', () => {
+      selectedGuest = null;
+      searchInput.value = '';
+      foundWrap.style.display = 'none';
+      rsvpFields.style.display = 'none';
+      lookupGroup.style.display = 'block';
+      searchInput.focus();
+    });
+
+    // ── Guest count dropdown ──────────────────────────────────────────────────
+    function populateGuestCount(max) {
+      const sel = document.getElementById('guests');
+      sel.innerHTML = '';
+      for (let i = 1; i <= max; i++) {
+        const opt = document.createElement('option');
+        opt.value = i;
+        opt.textContent = i === 1 ? '1 guest' : `${i} guests`;
+        sel.appendChild(opt);
+      }
+    }
+
+    // ── Meal choices ──────────────────────────────────────────────────────────
     const mealOptions = [
       { value: 'Grilled Beef Ribeye',           name: 'Grilled Beef Ribeye',           sauce: 'Mushroom Jus' },
       { value: 'Pan Seared Salmon',              name: 'Pan Seared Salmon',              sauce: 'Citrus Butter Cream' },
@@ -129,21 +283,33 @@
       document.querySelectorAll('.meal-select-dropdown.open').forEach(d => d.classList.remove('open'));
     });
 
+    // ── Attending toggle ──────────────────────────────────────────────────────
+    document.querySelectorAll('input[name="attending"]').forEach(el => {
+      el.addEventListener('change', () => {
+        const show = el.value === 'yes';
+        document.getElementById('guests-group').style.display = show ? 'block' : 'none';
+        document.getElementById('meal-choices-group').style.display = show ? 'block' : 'none';
+        if (show) renderMealChoices(parseInt(document.getElementById('guests').value));
+      });
+    });
+
+    document.getElementById('guests').addEventListener('change', function () {
+      renderMealChoices(parseInt(this.value));
+    });
+
+    // ── Submit ────────────────────────────────────────────────────────────────
     window.submitRSVP = async function () {
-      const name = document.getElementById('name').value.trim();
-      const email = document.getElementById('email').value.trim();
       const attendingEl = document.querySelector('input[name="attending"]:checked');
-      const guests = document.getElementById('guests').value;
-      const errorEl = document.getElementById('form-error');
-      const btn = document.getElementById('submit-btn');
+      const errorEl     = document.getElementById('form-error');
+      const btn         = document.getElementById('submit-btn');
 
       errorEl.textContent = '';
 
-      if (!name) { errorEl.textContent = 'Please enter your name.'; return; }
-      if (email && !email.includes('@')) { errorEl.textContent = 'Please enter a valid email.'; return; }
-      if (!attendingEl) { errorEl.textContent = 'Please select whether you\'ll be attending.'; return; }
+      if (!selectedGuest) { errorEl.textContent = 'Please find your name first.'; return; }
+      if (!attendingEl)   { errorEl.textContent = 'Please select whether you\'ll be attending.'; return; }
 
       const attending = attendingEl.value;
+      const guestCount = attending === 'yes' ? parseInt(document.getElementById('guests').value) : 0;
 
       let mealChoices = [];
       if (attending === 'yes') {
@@ -157,27 +323,27 @@
         }
       }
 
-      btn.textContent = 'Sending...';
+      btn.textContent = 'Sending…';
       btn.disabled = true;
 
       try {
         await addDoc(collection(db, 'rsvps'), {
-          name,
-          email,
+          guestId:   selectedGuest.id,
+          name:      selectedGuest.name,
           attending,
-          guests: attending === 'yes' ? parseInt(guests) : 0,
+          guests:    guestCount,
           mealChoices,
           submittedAt: serverTimestamp()
         });
 
         document.getElementById('rsvp-form-wrap').style.display = 'none';
+        document.getElementById('rsvp-subtitle').style.display = 'none';
         document.getElementById('rsvp-success').style.display = 'flex';
 
         if (attending === 'no') {
           document.getElementById('success-message').textContent =
             'We\'ll miss you, but thank you for letting us know.';
         }
-
       } catch (err) {
         console.error(err);
         errorEl.textContent = 'Something went wrong. Please try again.';
@@ -186,19 +352,10 @@
       }
     };
 
-    // Show/hide guest & meal fields based on attendance
-    document.querySelectorAll('input[name="attending"]').forEach(el => {
-      el.addEventListener('change', () => {
-        const show = el.value === 'yes';
-        document.getElementById('guests-group').style.display = show ? 'block' : 'none';
-        document.getElementById('meal-choices-group').style.display = show ? 'block' : 'none';
-        if (show) renderMealChoices(parseInt(document.getElementById('guests').value));
-      });
-    });
-
-    // Re-render meal selectors when guest count changes
-    document.getElementById('guests').addEventListener('change', function () {
-      renderMealChoices(parseInt(this.value));
+    // ── Init ──────────────────────────────────────────────────────────────────
+    loadGuests().catch(err => {
+      console.error('Failed to load guest list:', err);
+      document.getElementById('guest-search').placeholder = 'Unable to load guest list — please refresh.';
     });
   </script>
 </body>

@@ -9,7 +9,7 @@
 
 /* ─── Variables ─────────────────────────────────────────────────────────────── */
 :root {
-  --cream: #ededcc;
+  --cream: #fefae0;
   --warm-white: #f5f2ec;
   --ink: #079a9b;
   --ink-light: #5a5450;
@@ -463,6 +463,19 @@ nav a.active {
   align-self: center;
 }
 
+@media (max-width: 600px) {
+  .hotel-card-inner {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto;
+  }
+  .hotel-icon { display: none; }
+  .hotel-link {
+    grid-column: 1;
+    grid-row: 2;
+    margin-top: 1rem;
+  }
+}
+
 /* ─── Registry ───────────────────────────────────────────────────────────────── */
 .registry-grid {
   display: grid;
@@ -513,6 +526,79 @@ nav a.active {
   text-transform: uppercase;
   color: var(--gold);
   margin-top: 0.5rem;
+}
+
+/* ─── Guest Search ───────────────────────────────────────────────────────────── */
+.guest-search-wrap {
+  position: relative;
+}
+
+.guest-search-results {
+  display: none;
+  position: absolute;
+  top: calc(100% + 2px);
+  left: 0;
+  right: 0;
+  background: var(--cream);
+  border: 1px solid var(--border);
+  z-index: 20;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+}
+
+.guest-search-results.open { display: block; }
+
+.guest-result-item {
+  padding: 0.85rem 1rem;
+  font-size: 0.95rem;
+  color: var(--ink);
+  cursor: pointer;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+}
+
+.guest-result-item:last-child { border-bottom: none; }
+.guest-result-item:hover { background: var(--warm-white); }
+
+.guest-result-item.no-results {
+  color: var(--ink-light);
+  font-style: italic;
+  cursor: default;
+}
+
+.guest-found-wrap {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 1.75rem;
+}
+
+.guest-found-name {
+  flex: 1;
+  font-size: 0.95rem;
+  color: var(--ink);
+}
+
+.guest-found-check {
+  font-size: 0.75rem;
+  color: var(--gold);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.guest-change-btn {
+  background: none;
+  border: none;
+  font-family: var(--font-body);
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-light);
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 /* ─── RSVP Form ──────────────────────────────────────────────────────────────── */
