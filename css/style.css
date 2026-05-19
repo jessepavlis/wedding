@@ -9,7 +9,7 @@
 
 /* ─── Variables ─────────────────────────────────────────────────────────────── */
 :root {
-  --cream: #fefae0;
+  --cream: #f9f6ee;
   --warm-white: #f5f2ec;
   --ink: #079a9b;
   --ink-light: #5a5450;
@@ -23,7 +23,7 @@
 /* ─── Reset ──────────────────────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-html { font-size: 16px; scroll-behavior: smooth; }
+html { font-size: 22px; scroll-behavior: smooth; }
 
 body {
   background-color: var(--cream);
@@ -244,7 +244,7 @@ nav a.active {
 
 .page-subtitle {
   font-family: var(--font-display);
-  font-style: italic;
+  font-style: normal;
   font-size: 1.1rem;
   color: var(--ink-light);
   max-width: 480px;
@@ -321,6 +321,15 @@ nav a.active {
 }
 
 /* ─── Venue ──────────────────────────────────────────────────────────────────── */
+.venue-hero-img {
+  margin-bottom: 2.5rem;
+}
+
+.venue-hero-img img {
+  width: 100%;
+  display: block;
+}
+
 .venue-section {
   margin-bottom: 3rem;
   animation: fadeUp 0.9s ease both;
@@ -340,12 +349,25 @@ nav a.active {
 
 .venue-address {
   font-family: var(--font-display);
-  font-style: italic;
+  font-style: normal;
   font-size: 1.1rem;
   color: var(--ink-light);
   margin-bottom: 1.5rem;
   line-height: 1.6;
 }
+
+.venue-description {
+  margin-bottom: 2rem;
+}
+
+.venue-description p {
+  font-size: 0.88rem;
+  line-height: 1.8;
+  color: var(--ink-light);
+  margin-bottom: 1rem;
+}
+
+.venue-description p:last-child { margin-bottom: 0; }
 
 .venue-map {
   border: 1px solid var(--border);
@@ -394,6 +416,43 @@ nav a.active {
 .detail-card ul li::before {
   content: '— ';
   color: var(--gold-light);
+}
+
+/* ─── FAQ ────────────────────────────────────────────────────────────────────── */
+.faq-list {
+  max-width: 680px;
+  margin: 0 auto;
+}
+
+.faq-item {
+  padding: 1.75rem 0;
+  border-bottom: 1px solid var(--border);
+  animation: fadeUp 0.8s ease both;
+}
+
+.faq-item:first-child { padding-top: 0; }
+
+.faq-item h3 {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 400;
+  color: var(--ink);
+  margin-bottom: 0.75rem;
+}
+
+.faq-item p {
+  font-size: 0.88rem;
+  line-height: 1.8;
+  color: var(--ink-light);
+  margin-bottom: 0.5rem;
+}
+
+.faq-item p:last-child { margin-bottom: 0; }
+
+.faq-item a {
+  color: var(--gold);
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 /* ─── Amenities ──────────────────────────────────────────────────────────────── */
@@ -529,8 +588,20 @@ nav a.active {
 }
 
 /* ─── Guest Search ───────────────────────────────────────────────────────────── */
+.guest-name-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 2rem;
+}
+
+@media (max-width: 480px) {
+  .guest-name-fields { grid-template-columns: 1fr; }
+}
+
 .guest-search-wrap {
   position: relative;
+  margin-top: 1.25rem;
+  text-align: center;
 }
 
 .guest-search-results {
@@ -672,11 +743,30 @@ nav a.active {
 
 .meal-guest-group {
   margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border);
 }
 
 .meal-guest-group:first-child {
   margin-top: 0;
+  padding-top: 0;
+  border-top: none;
 }
+
+.meal-guest-name {
+  width: 100%;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  padding: 0.6rem 0;
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  color: var(--ink);
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.meal-guest-name:focus { border-bottom-color: var(--gold); }
 
 .meal-select {
   position: relative;
@@ -792,6 +882,56 @@ nav a.active {
   font-size: 0.82rem;
   margin-top: 1rem;
   min-height: 1rem;
+}
+
+.field-error {
+  color: #c0392b;
+  font-size: 0.75rem;
+  margin-top: 0.35rem;
+  min-height: 1rem;
+}
+
+/* Already responded summary */
+.rsvp-summary {
+  padding: 1.5rem 0;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 1.75rem;
+}
+
+.rsvp-summary-status {
+  font-size: 1rem;
+  color: var(--ink);
+  margin-bottom: 1rem;
+}
+
+.rsvp-summary-label {
+  font-size: 0.68rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--ink-light);
+  margin-bottom: 0.5rem;
+}
+
+.rsvp-summary-meals {
+  list-style: none;
+  font-size: 0.88rem;
+  color: var(--ink-light);
+  line-height: 2;
+  margin-bottom: 1rem;
+}
+
+.rsvp-summary-meals li::before {
+  content: '— ';
+  color: var(--gold-light);
+}
+
+.rsvp-summary-change {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 0.92rem;
+  color: var(--ink-light);
+  margin-top: 1rem;
 }
 
 /* Success state */

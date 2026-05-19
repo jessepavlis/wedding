@@ -14,8 +14,9 @@
     <ul>
       <li><a href="/wedding">Home</a></li>
       <li><a href="/wedding/venue">Venue</a></li>
-      <li><a href="/wedding/amenities">Amenities</a></li>
+      <li><a href="/wedding/accommodations">Accommodations</a></li>
       <li><a href="/wedding/registry">Registry</a></li>
+      <li><a href="/wedding/faq">FAQ</a></li>
       <li><a href="/wedding/rsvp" class="active">RSVP</a></li>
     </ul>
   </nav>
@@ -24,17 +25,28 @@
     <header class="page-header">
       <p class="page-eyebrow">August 22, 2026</p>
       <h1>RSVP</h1>
-      <p class="page-subtitle" id="rsvp-subtitle">Find your name below to get started.</p>
+      <p class="page-subtitle" id="rsvp-subtitle">Enter at least 3 characters in both your first and last name to find your party.</p>
     </header>
 
     <div id="rsvp-form-wrap">
       <div class="rsvp-section">
 
         <!-- Guest lookup -->
-        <div class="form-group" id="lookup-group">
-          <label for="guest-search">Find your invitation</label>
+        <div id="lookup-group">
+          <div class="guest-name-fields">
+            <div class="form-group">
+              <label for="search-first">First name</label>
+              <input type="text" id="search-first" autocomplete="off" />
+              <p class="field-error" id="first-error"></p>
+            </div>
+            <div class="form-group">
+              <label for="search-last">Last name</label>
+              <input type="text" id="search-last" autocomplete="off" />
+              <p class="field-error" id="last-error"></p>
+            </div>
+          </div>
           <div class="guest-search-wrap">
-            <input type="text" id="guest-search" placeholder="Start typing your name…" autocomplete="off" />
+            <button type="button" id="search-btn" class="btn-primary" disabled>Find my invitation</button>
             <div class="guest-search-results" id="guest-results"></div>
           </div>
         </div>
@@ -44,6 +56,18 @@
           <span class="guest-found-name" id="guest-found-name"></span>
           <span class="guest-found-check">✓ Found</span>
           <button type="button" class="guest-change-btn" id="guest-change-btn">Change</button>
+        </div>
+
+        <!-- Already responded view -->
+        <div id="rsvp-already-responded" style="display:none">
+          <div class="rsvp-summary">
+            <p id="summary-attending-line" class="rsvp-summary-status"></p>
+            <div id="summary-meals" style="display:none">
+              <p class="rsvp-summary-label">Meal selections</p>
+              <ul id="summary-meal-list" class="rsvp-summary-meals"></ul>
+            </div>
+            <p class="rsvp-summary-change">Need to make a change? Reach out to us directly and we'll take care of it.</p>
+          </div>
         </div>
 
         <!-- Form fields — revealed after guest is selected -->
@@ -94,8 +118,10 @@
     import { initializeApp }       from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getFirestore,
              collection,
+             doc,
              getDocs,
              addDoc,
+             updateDoc,
              serverTimestamp }     from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
     import { initializeAppCheck,
              ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app-check.js";
@@ -142,23 +168,45 @@
     }
 
     // ── Search UI ─────────────────────────────────────────────────────────────
-    const searchInput  = document.getElementById('guest-search');
-    const resultsBox   = document.getElementById('guest-results');
-    const lookupGroup  = document.getElementById('lookup-group');
-    const foundWrap    = document.getElementById('guest-found-wrap');
-    const foundName    = document.getElementById('guest-found-name');
-    const changeBtn    = document.getElementById('guest-change-btn');
-    const rsvpFields   = document.getElementById('rsvp-fields');
+    const firstInput  = document.getElementById('search-first');
+    const lastInput   = document.getElementById('search-last');
+    const searchBtn   = document.getElementById('search-btn');
+    const resultsBox  = document.getElementById('guest-results');
+    const lookupGroup = document.getElementById('lookup-group');
+    const foundWrap   = document.getElementById('guest-found-wrap');
+    const foundName   = document.getElementById('guest-found-name');
+    const changeBtn   = document.getElementById('guest-change-btn');
+    const rsvpFields  = document.getElementById('rsvp-fields');
 
-    searchInput.addEventListener('input', () => {
-      const q = searchInput.value.trim();
-      if (q.length < 2) { resultsBox.innerHTML = ''; resultsBox.classList.remove('open'); return; }
-      const matches = searchGuests(q);
+    const firstError = document.getElementById('first-error');
+    const lastError  = document.getElementById('last-error');
+
+    function validateField(input, errorEl) {
+      if (input.value.trim().length > 0 && input.value.trim().length < 3) {
+        errorEl.textContent = 'Please enter at least 3 characters.';
+      } else {
+        errorEl.textContent = '';
+      }
+    }
+
+    function updateSearchBtn() {
+      const ready = firstInput.value.trim().length >= 3 && lastInput.value.trim().length >= 3;
+      searchBtn.disabled = !ready;
+    }
+
+    firstInput.addEventListener('input', () => { validateField(firstInput, firstError); updateSearchBtn(); });
+    lastInput.addEventListener('input',  () => { validateField(lastInput,  lastError);  updateSearchBtn(); });
+    firstInput.addEventListener('blur',  () => validateField(firstInput, firstError));
+    lastInput.addEventListener('blur',   () => validateField(lastInput,  lastError));
+
+    function runSearch() {
+      const query = (firstInput.value.trim() + ' ' + lastInput.value.trim());
+      const matches = searchGuests(query);
       resultsBox.innerHTML = '';
       if (!matches.length) {
         const el = document.createElement('div');
         el.className = 'guest-result-item no-results';
-        el.textContent = 'No matches found';
+        el.textContent = 'No matches found — please check your spelling or contact us for help.';
         resultsBox.appendChild(el);
       } else {
         matches.forEach(g => {
@@ -170,12 +218,15 @@
         });
       }
       resultsBox.classList.add('open');
+    }
+
+    searchBtn.addEventListener('click', runSearch);
+    [firstInput, lastInput].forEach(el => {
+      el.addEventListener('keydown', e => { if (e.key === 'Enter' && !searchBtn.disabled) runSearch(); });
     });
 
     document.addEventListener('click', e => {
-      if (!searchInput.contains(e.target) && !resultsBox.contains(e.target)) {
-        resultsBox.classList.remove('open');
-      }
+      if (!lookupGroup.contains(e.target)) resultsBox.classList.remove('open');
     });
 
     function selectGuest(guest) {
@@ -184,22 +235,56 @@
       lookupGroup.style.display = 'none';
       foundName.textContent = guest.name;
       foundWrap.style.display = 'flex';
-      rsvpFields.style.display = 'block';
-      populateGuestCount(guest.maxGuests);
-      // Reset form state
-      document.querySelectorAll('input[name="attending"]').forEach(r => r.checked = false);
-      document.getElementById('guests-group').style.display = 'none';
-      document.getElementById('meal-choices-group').style.display = 'none';
-      document.getElementById('form-error').textContent = '';
+
+      if (guest.responded) {
+        showAlreadyResponded(guest);
+      } else {
+        rsvpFields.style.display = 'block';
+        populateGuestCount(guest.maxGuests);
+        document.querySelectorAll('input[name="attending"]').forEach(r => r.checked = false);
+        document.getElementById('guests-group').style.display = 'none';
+        document.getElementById('meal-choices-group').style.display = 'none';
+        document.getElementById('form-error').textContent = '';
+      }
+    }
+
+    function showAlreadyResponded(guest) {
+      document.getElementById('guest-change-btn').style.display = 'none';
+      const wrap = document.getElementById('rsvp-already-responded');
+      const attendingLine = document.getElementById('summary-attending-line');
+      const mealsWrap = document.getElementById('summary-meals');
+      const mealList = document.getElementById('summary-meal-list');
+
+      if (guest.attending === 'yes') {
+        const count = guest.guests || 1;
+        attendingLine.textContent = `You're coming! (${count} ${count === 1 ? 'guest' : 'guests'})`;
+        if (guest.mealChoices && guest.mealChoices.length) {
+          mealList.innerHTML = guest.mealChoices
+            .map(m => `<li>${m.name || `Guest ${m.guest}`}: ${m.meal}</li>`)
+            .join('');
+          mealsWrap.style.display = 'block';
+        }
+      } else {
+        attendingLine.textContent = 'You let us know you\'re unable to attend.';
+        mealsWrap.style.display = 'none';
+      }
+
+      wrap.style.display = 'block';
+      document.getElementById('rsvp-fields').style.display = 'none';
     }
 
     changeBtn.addEventListener('click', () => {
       selectedGuest = null;
-      searchInput.value = '';
+      firstInput.value = '';
+      lastInput.value = '';
+      searchBtn.disabled = true;
+      resultsBox.innerHTML = '';
+      resultsBox.classList.remove('open');
       foundWrap.style.display = 'none';
       rsvpFields.style.display = 'none';
+      document.getElementById('rsvp-already-responded').style.display = 'none';
       lookupGroup.style.display = 'block';
-      searchInput.focus();
+      firstInput.focus();
     });
 
     // ── Guest count dropdown ──────────────────────────────────────────────────
@@ -230,12 +315,21 @@
       const container = document.getElementById('meal-choices-container');
       container.innerHTML = '';
       for (let i = 1; i <= count; i++) {
-        const label = i === 1 ? 'Your meal' : `Guest ${i} meal`;
         const group = document.createElement('div');
         group.className = 'meal-guest-group';
 
-        const labelEl = document.createElement('label');
-        labelEl.textContent = label;
+        // Name input
+        const nameLabel = document.createElement('label');
+        nameLabel.textContent = i === 1 ? 'Your name' : `Guest ${i} name`;
+        const nameInput = document.createElement('input');
+        nameInput.type = 'text';
+        nameInput.className = 'meal-guest-name';
+        nameInput.dataset.guest = i;
+
+        // Meal label + custom select
+        const mealLabel = document.createElement('label');
+        mealLabel.textContent = i === 1 ? 'Your meal' : `Guest ${i} meal`;
+        mealLabel.style.marginTop = '0.75rem';
 
         const wrap = document.createElement('div');
         wrap.className = 'meal-select';
@@ -273,7 +367,9 @@
 
         wrap.appendChild(trigger);
         wrap.appendChild(dropdown);
-        group.appendChild(labelEl);
+        group.appendChild(nameLabel);
+        group.appendChild(nameInput);
+        group.appendChild(mealLabel);
         group.appendChild(wrap);
         container.appendChild(group);
       }
@@ -313,8 +409,15 @@
 
       let mealChoices = [];
       if (attending === 'yes') {
-        mealChoices = Array.from(document.querySelectorAll('.meal-select')).map((el, i) => ({
+        const nameInputs = document.querySelectorAll('.meal-guest-name');
+        const mealSelects = document.querySelectorAll('.meal-select');
+        if (Array.from(nameInputs).some(el => !el.value.trim())) {
+          errorEl.textContent = 'Please enter a name for each guest.';
+          return;
+        }
+        mealChoices = Array.from(mealSelects).map((el, i) => ({
           guest: i + 1,
+          name: nameInputs[i].value.trim(),
           meal: el.dataset.value
         }));
         if (mealChoices.some(m => !m.meal)) {
@@ -336,6 +439,13 @@
           submittedAt: serverTimestamp()
         });
 
+        await updateDoc(doc(db, 'guests', selectedGuest.id), {
+          responded: true,
+          attending,
+          guests: guestCount,
+          mealChoices
+        });
+
         document.getElementById('rsvp-form-wrap').style.display = 'none';
         document.getElementById('rsvp-subtitle').style.display = 'none';
         document.getElementById('rsvp-success').style.display = 'flex';
@@ -355,7 +465,7 @@
     // ── Init ──────────────────────────────────────────────────────────────────
     loadGuests().catch(err => {
       console.error('Failed to load guest list:', err);
-      document.getElementById('guest-search').placeholder = 'Unable to load guest list — please refresh.';
+      firstInput.placeholder = 'Unable to load — please refresh.';
     });
   </script>
 </body>
