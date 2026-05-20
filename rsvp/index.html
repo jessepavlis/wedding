@@ -10,11 +10,13 @@
 </head>
 <body data-wc-title="RSVP">
 
+  <img src="/wedding/images/bar.svg" alt="" class="page-bar" />
+
   <nav>
     <ul>
       <li><a href="/wedding">Home</a></li>
       <li><a href="/wedding/venue">Venue</a></li>
-      <li><a href="/wedding/accommodations">Accommodations</a></li>
+      <li><a href="/wedding/hotels">Hotels</a></li>
       <li><a href="/wedding/registry">Registry</a></li>
       <li><a href="/wedding/faq">FAQ</a></li>
       <li><a href="/wedding/rsvp" class="active">RSVP</a></li>
@@ -23,7 +25,6 @@
 
   <main class="page-main">
     <header class="page-header">
-      <p class="page-eyebrow">August 22, 2026</p>
       <h1>RSVP</h1>
       <p class="page-subtitle" id="rsvp-subtitle">Enter at least 3 characters in both your first and last name to find your party.</p>
     </header>
@@ -77,10 +78,10 @@
             <label>Will you be joining us?</label>
             <div class="radio-group">
               <label class="radio-label">
-                <input type="radio" name="attending" value="yes" /> Yes, I'll be there
+                <input type="radio" name="attending" value="yes" /> Yes, can't wait!
               </label>
               <label class="radio-label">
-                <input type="radio" name="attending" value="no" /> Unable to attend
+                <input type="radio" name="attending" value="no" /> No, can't make it.
               </label>
             </div>
           </div>
@@ -93,6 +94,11 @@
           <div class="form-group" id="meal-choices-group" style="display:none">
             <label>Meal selection</label>
             <div id="meal-choices-container"></div>
+          </div>
+
+          <div class="form-group">
+            <label for="rsvp-note">Note <span class="optional">(optional)</span></label>
+            <textarea id="rsvp-note" placeholder="Dietary restrictions, questions, or well-wishes…"></textarea>
           </div>
 
           <p id="form-error" class="form-error"></p>
@@ -111,7 +117,7 @@
   </main>
 
   <footer>
-    <p data-wc="footer">Jesse & Lisa · August 22, 2026</p>
+    <img src="/wedding/images/bar.svg" alt="" class="footer-bar" />
   </footer>
 
   <script type="module">
@@ -429,6 +435,8 @@
       btn.textContent = 'Sending…';
       btn.disabled = true;
 
+      const note = document.getElementById('rsvp-note').value.trim();
+
       try {
         await addDoc(collection(db, 'rsvps'), {
           guestId:   selectedGuest.id,
@@ -436,6 +444,7 @@
           attending,
           guests:    guestCount,
           mealChoices,
+          ...(note && { note }),
           submittedAt: serverTimestamp()
         });
 

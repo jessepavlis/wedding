@@ -7,17 +7,45 @@
   font-display: swap;
 }
 
+@font-face {
+  font-family: 'Notably Absent';
+  src: url('/wedding/fonts/Notably Absent.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Sniglet';
+  src: url('/wedding/fonts/Sniglet-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
 /* ─── Variables ─────────────────────────────────────────────────────────────── */
 :root {
   --cream: #f9f6ee;
   --warm-white: #f5f2ec;
   --ink: #079a9b;
-  --ink-light: #5a5450;
+  --ink-light: #106271;
   --gold: #ed901e;
   --gold-light: #f4b97a;
   --border: #e2ddd6;
+  --da-pink: #e17690;
+  --da-orange: #e7a040;
+  --da-dark-blue: #2D606F;
   --font-display: 'Kindfield', Georgia, serif;
+  --font-date: 'Kindfield', Georgia, serif;
+  --font-time: 'Sniglet', Georgia, serif;
+  --font-countdown-number: 'Kindfield', Georgia, serif;
+  --font-countdown-letter: 'Sniglet', Georgia, serif;
+  --font-header: 'Kindfield', Georgia, serif;
+  --font-subheader: 'Kindfield', Georgia, serif;
+  --font-address: 'Sniglet', Georgia, serif;
   --font-body: 'Kindfield', Georgia, serif;
+  --font-nav: 'Kindfield', Georgia, serif;
+  --font-button: 'Sniglet', Georgia, serif;
 }
 
 /* ─── Reset ──────────────────────────────────────────────────────────────────── */
@@ -37,16 +65,38 @@ body {
 }
 
 /* ─── Sparkle layer ──────────────────────────────────────────────────────────── */
-main, footer { position: relative; z-index: 1; }
+main   { position: relative; z-index: 1; }
+footer { position: relative; z-index: 0; }
+
+/* ─── Page bar (top + footer) ────────────────────────────────────────────────── */
+.page-bar {
+  position: fixed;
+  top: 0;
+  left: -20px;
+  width: calc(100% + 42px);
+  height: 60px;
+  display: block;
+  object-fit: fill;
+  z-index: 200;
+}
+
+.footer-bar {
+  display: block;
+  width: calc(100% + 42px);
+  height: 60px;
+  margin-left: -20px;
+  object-fit: fill;
+}
 
 /* ─── Nav ────────────────────────────────────────────────────────────────────── */
 nav {
   position: fixed;
-  top: 0;
+  top: 60px;
   left: 0;
   right: 0;
   z-index: 100;
-  padding: 1.5rem 2.5rem;
+  /* padding: 1.5rem 2.5rem; */
+  padding: .25rem;
   display: flex;
   justify-content: center;
   background: #215d67;
@@ -63,9 +113,9 @@ nav ul {
 
 nav a {
   text-decoration: none;
-  font-family: var(--font-body);
-  font-size: 0.72rem;
-  letter-spacing: 0.18em;
+  font-family: var(--font-nav);
+  font-size: 0.62rem;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   color: #ed901e;
   transition: color 0.2s;
@@ -88,7 +138,7 @@ nav a.active {
   align-items: center;
   justify-content: center;
   text-align: center;
-  padding: 8rem 2rem 4rem;
+  padding: calc(8rem + 60px) 2rem 4rem;
   min-height: 100vh;
   position: relative;
   overflow: hidden;
@@ -105,6 +155,7 @@ nav a.active {
 
 .hero-inner {
   position: relative;
+  width: 100%;
   animation: fadeUp 1.2s ease both;
 }
 
@@ -119,7 +170,7 @@ nav a.active {
 
 .hero-names-img {
   width: 100%;
-  max-width: 560px;
+  max-width: 800px;
   height: auto;
   display: block;
   margin: 0 auto;
@@ -134,20 +185,20 @@ nav a.active {
 }
 
 .hero-date {
-  font-family: var(--font-body);
-  font-size: 0.8rem;
+  font-family: var(--font-date);
+  font-size: 1.6rem;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: #215d67;
+  color: var(--da-pink);
   margin-top: 2rem;
 }
 
 .hero-time {
-  font-family: var(--font-body);
-  font-size: 0.8rem;
+  font-family: var(--font-time);
+  font-size: 1.6rem;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: #215d67;
+  color: var(--da-dark-blue);
   margin-top: 0.4rem;
 }
 
@@ -188,19 +239,19 @@ nav a.active {
 }
 
 .countdown-item span {
-  font-family: var(--font-display);
+  font-family: var(--font-countdown-number);
   font-size: 2.8rem;
   font-weight: 300;
   line-height: 1;
-  color: var(--ink);
+  color: var(--da-orange);
 }
 
 .countdown-item label {
-  font-family: var(--font-body);
+  font-family: var(--font-countdown-letter);
   font-size: 0.6rem;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: var(--ink-light);
+  color: var(--da-dark-blue);
 }
 
 .countdown-sep {
@@ -216,7 +267,7 @@ nav a.active {
   max-width: 860px;
   margin: 0 auto;
   width: 100%;
-  padding: 7rem 2rem 4rem;
+  padding: calc(7rem + 60px) 2rem 4rem;
 }
 
 .page-header {
@@ -235,15 +286,15 @@ nav a.active {
 }
 
 .page-header h1 {
-  font-family: var(--font-display);
-  font-size: clamp(3rem, 7vw, 5.5rem);
+  font-family: var(--font-header);
+  font-size: clamp(1.8rem, 7vw, 4rem);
   font-weight: 300;
   line-height: 1;
   color: var(--ink);
 }
 
 .page-subtitle {
-  font-family: var(--font-display);
+  font-family: var(--font-subheader);
   font-style: normal;
   font-size: 1.1rem;
   color: var(--ink-light);
@@ -321,8 +372,15 @@ nav a.active {
 }
 
 /* ─── Venue ──────────────────────────────────────────────────────────────────── */
+[data-wc-title="Venue"] .page-header h1 {
+  color: var(--da-dark-blue);
+}
+
+[data-wc-title="Registry"] .page-header h1 {
+  color: var(--da-pink);
+}
+
 .venue-hero-img {
-  margin-bottom: 2.5rem;
 }
 
 .venue-hero-img img {
@@ -348,10 +406,10 @@ nav a.active {
 }
 
 .venue-address {
-  font-family: var(--font-display);
+  font-family: var(--font-address);
   font-style: normal;
   font-size: 1.1rem;
-  color: var(--ink-light);
+  color: var(--da-pink);
   margin-bottom: 1.5rem;
   line-height: 1.6;
 }
@@ -450,7 +508,9 @@ nav a.active {
 .faq-item p:last-child { margin-bottom: 0; }
 
 .faq-item a {
+  font-family: var(--font-button);
   color: var(--gold);
+  font-weight: bold;
   text-decoration: underline;
   text-underline-offset: 3px;
 }
@@ -477,34 +537,42 @@ nav a.active {
 .hotel-card:hover { background: var(--warm-white); }
 
 .hotel-card-inner {
-  display: grid;
-  grid-template-columns: 2rem 1fr auto;
-  gap: 0 1.5rem;
-  align-items: center;
+  display: flex;
+  flex-direction: column;
   padding: 2rem;
+  gap: 0.4rem;
 }
 
-.hotel-icon {
-  font-size: 1.2rem;
-  color: var(--gold);
-  align-self: start;
-  padding-top: 0.2rem;
-}
-
-.hotel-info h2 {
+.hotel-name {
   font-family: var(--font-display);
   font-size: 1.6rem;
   font-weight: 400;
   color: var(--ink);
-  margin-bottom: 0.2rem;
 }
 
 .hotel-location {
+  font-family: var(--font-address);
   font-size: 0.75rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--gold);
-  margin-bottom: 0.6rem;
+  color: var(--da-pink);
+}
+
+.hotel-card-body {
+  display: flex;
+  margin-top: 0.75rem;
+  gap: 1rem;
+}
+
+.hotel-desc-col {
+  flex: 0 0 70%;
+}
+
+.hotel-link-col {
+  flex: 0 0 30%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .hotel-desc {
@@ -514,24 +582,59 @@ nav a.active {
 }
 
 .hotel-link {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  color: var(--gold);
+  line-height: 1.3;
+}
+
+.hotel-link-text {
+  flex: 0 0 50%;
+  font-family: var(--font-button);
+  color: var(--da-pink);
+  line-height: 1;
+}
+
+
+.hotel-link-main {
   font-size: 0.72rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--gold);
-  white-space: nowrap;
-  align-self: center;
+}
+
+.hotel-link-arrow {
+  flex: 0 0 50%;
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  color: var(--da-orange);
+}
+
+.hotel-link-sub {
+  font-size: 0.65rem;
+  letter-spacing: 0.08em;
+  text-transform: none;
+}
+
+.hotel-link-deadline {
+  font-size: 0.6rem;
+  letter-spacing: 0.06em;
+  color: var(--da-orange);
+  text-transform: none;
 }
 
 @media (max-width: 600px) {
-  .hotel-card-inner {
-    grid-template-columns: 1fr;
-    grid-template-rows: auto auto;
+  .hotel-card-body {
+    flex-direction: column;
   }
-  .hotel-icon { display: none; }
-  .hotel-link {
-    grid-column: 1;
-    grid-row: 2;
-    margin-top: 1rem;
+  .hotel-desc-col,
+  .hotel-link-col {
+    flex: none;
+    width: 100%;
+  }
+  .hotel-link-col {
+    justify-content: flex-start;
   }
 }
 
@@ -580,11 +683,16 @@ nav a.active {
 }
 
 .registry-link {
-  font-size: 0.72rem;
+  font-family: var(--font-button);
+  font-size: 1.25rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--gold);
   margin-top: 0.5rem;
+}
+
+.registry-link-arrow {
+  color: var(--da-pink);
 }
 
 /* ─── Guest Search ───────────────────────────────────────────────────────────── */
@@ -740,6 +848,7 @@ nav a.active {
   background-position: right 4px center;
   padding-right: 1.5rem;
 }
+
 
 .meal-guest-group {
   margin-top: 1.5rem;
@@ -986,8 +1095,8 @@ nav a.active {
 .btn-outline {
   display: inline-block;
   background: transparent;
-  color: var(--ink);
-  font-family: var(--font-body);
+  color: var(--da-pink);
+  font-family: var(--font-button);
   font-size: 0.7rem;
   letter-spacing: 0.22em;
   text-transform: uppercase;
@@ -1000,7 +1109,7 @@ nav a.active {
 }
 
 .btn-outline:hover {
-  border-color: var(--ink);
+  border-color: var(--da-pink);
 }
 
 .page-cta {
@@ -1010,13 +1119,9 @@ nav a.active {
 
 /* ─── Footer ─────────────────────────────────────────────────────────────────── */
 footer {
-  text-align: center;
-  padding: 2rem;
-  border-top: 1px solid var(--border);
-  font-size: 0.68rem;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: #ed901e;
+  padding: 0;
+  border-top: none;
+  overflow: hidden;
 }
 
 /* ─── Animations ─────────────────────────────────────────────────────────────── */
@@ -1027,9 +1132,15 @@ footer {
 
 /* ─── Responsive ─────────────────────────────────────────────────────────────── */
 @media (max-width: 640px) {
-  nav { padding: 1.25rem 1rem; }
-  nav ul { gap: 1.2rem; }
-  nav a { font-size: 0.62rem; letter-spacing: 0.1em; }
+  nav {
+    overflow-x: auto;
+    justify-content: flex-start;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  nav::-webkit-scrollbar { display: none; }
+  nav ul { gap: 1.25rem; flex-wrap: nowrap; padding: 0 1rem; }
+  nav a { font-size: 0.6rem; letter-spacing: 0.08em; white-space: nowrap; }
 
   .timeline::before { left: 16px; transform: none; }
   .timeline-item {
