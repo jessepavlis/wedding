@@ -675,15 +675,16 @@ nav a.active {
 }
 
 @media (max-width: 600px) {
-  .hotel-card-body {
+  .hotel-card-inner {
     flex-direction: column;
+    align-items: flex-start;
   }
-  .hotel-desc-col,
-  .hotel-link-col {
-    flex: none;
+  .hotel-info-col {
     width: 100%;
   }
   .hotel-link-col {
+    flex: none;
+    width: 100%;
     justify-content: flex-start;
   }
 }
@@ -1057,8 +1058,36 @@ nav a.active {
 .guest-name-input:focus { border-color: var(--da-light-pink); }
 
 @media (max-width: 520px) {
-  .guest-row-name-col { flex: 0 0 35%; }
-  .guest-attend-radios { gap: 0.75rem; }
+  #guest-rows-container {
+    padding-left: 0;
+    padding-right: 0;
+  }
+  .guest-row {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  .guest-row-name-col {
+    flex: none;
+    width: 100%;
+    padding-right: 0;
+  }
+  .guest-name-input {
+    width: 100%;
+    margin-top: 0.35rem;
+  }
+  .guest-row-controls {
+    width: 100%;
+  }
+  .guest-attend-radios {
+    gap: 1rem;
+  }
+  .guest-row-details {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .meal-select {
+    width: 100%;
+  }
 }
 
 .rsvp-submit-wrap {
