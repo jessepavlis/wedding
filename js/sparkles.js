@@ -1,7 +1,11 @@
 (function () {
   var srcs = [
     '/wedding/images/text/sparkle1.svg',
-    '/wedding/images/text/sparkle2.svg'
+    '/wedding/images/text/sparkle2.svg',
+    '/wedding/images/text/sparkle3.png',
+    '/wedding/images/text/sparkle4.png',
+    '/wedding/images/text/sparkle5.png',
+    '/wedding/images/text/sparkle6.png'
   ];
 
   var wrap = document.createElement('div');
@@ -15,7 +19,7 @@
 
   for (var i = 0; i < placements.length; i++) {
     var img = document.createElement('img');
-    img.src = srcs[i % 2];
+    img.src = srcs[i % 6];
     var size = 36 + Math.floor(Math.random() * 64);
     var rot  = Math.floor(Math.random() * 360);
     var op   = (0.7 + Math.random() * 0.18).toFixed(2);
