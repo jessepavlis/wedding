@@ -18,7 +18,7 @@
     img.src = srcs[i % 2];
     var size = 36 + Math.floor(Math.random() * 64);
     var rot  = Math.floor(Math.random() * 360);
-    var op   = (0.12 + Math.random() * 0.18).toFixed(2);
+    var op   = (0.7 + Math.random() * 0.18).toFixed(2);
     img.style.cssText =
       'position:absolute;' +
       'top:'    + placements[i][0] + '%;' +

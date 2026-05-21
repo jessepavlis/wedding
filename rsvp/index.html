@@ -25,15 +25,16 @@
 
   <main class="page-main">
     <header class="page-header">
-      <h1>RSVP</h1>
+      <h1>Pese espon</h1>
+      <p class="rsvp-by-date">by July 11th</p>
       <p class="page-subtitle" id="rsvp-subtitle">Enter at least 3 characters in both your first and last name to find your party.</p>
     </header>
 
     <div id="rsvp-form-wrap">
       <div class="rsvp-section">
 
-        <!-- Guest lookup -->
-        <div id="lookup-group">
+        <!-- Step 1: Find your party -->
+        <div id="lookup-group" class="rsvp-step">
           <div class="guest-name-fields">
             <div class="form-group">
               <label for="search-first">First name</label>
@@ -55,7 +56,7 @@
         <!-- Selected guest confirmation -->
         <div class="guest-found-wrap" id="guest-found-wrap" style="display:none">
           <span class="guest-found-name" id="guest-found-name"></span>
-          <span class="guest-found-check">✓ Found</span>
+          <span class="guest-found-check">&#10003; Found</span>
           <button type="button" class="guest-change-btn" id="guest-change-btn">Change</button>
         </div>
 
@@ -74,45 +75,30 @@
         <!-- Form fields — revealed after guest is selected -->
         <div id="rsvp-fields" style="display:none">
 
-          <div class="form-group">
-            <label>Will you be joining us?</label>
-            <div class="radio-group">
-              <label class="radio-label">
-                <input type="radio" name="attending" value="yes" /> Yes, can't wait!
-              </label>
-              <label class="radio-label">
-                <input type="radio" name="attending" value="no" /> No, can't make it.
-              </label>
-            </div>
-          </div>
+          <!-- Per-guest rows rendered by JS -->
+          <div id="guest-rows-container"></div>
 
-          <div class="form-group" id="guests-group" style="display:none">
-            <label for="guests">Number of guests</label>
-            <select id="guests"></select>
-          </div>
-
-          <div class="form-group" id="meal-choices-group" style="display:none">
-            <label>Meal selection</label>
-            <div id="meal-choices-container"></div>
-          </div>
-
-          <div class="form-group">
-            <label for="rsvp-note">Note <span class="optional">(optional)</span></label>
-            <textarea id="rsvp-note" placeholder="Dietary restrictions, questions, or well-wishes…"></textarea>
+          <!-- Note -->
+          <div class="form-group rsvp-step">
+            <p class="rsvp-count-heading">Feel free to leave us a note! <span class="optional">optional</span></p>
+            <textarea id="rsvp-note" placeholder="Dietary restrictions, questions, or well-wishes..."></textarea>
           </div>
 
           <p id="form-error" class="form-error"></p>
-          <button id="submit-btn" class="btn-primary" onclick="submitRSVP()">Send RSVP</button>
+          <div class="rsvp-submit-wrap">
+            <button id="submit-btn" class="btn-primary" onclick="submitRSVP()">Send RSVP</button>
+          </div>
+
         </div>
 
       </div>
     </div>
 
     <div id="rsvp-success" class="rsvp-success" style="display:none">
-      <div class="success-icon">✦</div>
+      <div class="success-icon">&#10086;</div>
       <h2>Thank you!</h2>
       <p id="success-message">We can't wait to celebrate with you.</p>
-      <a href="/wedding" class="btn-outline" style="margin-top:1rem;">Back to Home</a>
+      <a href="/wedding" class="btn-outline" style="margin-top:1.5rem;">Back to Home</a>
     </div>
   </main>
 
@@ -152,7 +138,61 @@
     });
     const db = getFirestore(app);
 
-    // ── Guest list ────────────────────────────────────────────────────────────
+    const mealOptions = [
+      { value: 'Grilled Beef Ribeye',           name: 'Grilled Beef Ribeye',           sauce: 'Mushroom Jus' },
+      { value: 'Pan Seared Salmon',              name: 'Pan Seared Salmon',              sauce: 'Citrus Butter Cream' },
+      { value: "Eichner's Farm Chicken Breast",  name: "Eichner's Farm Chicken Breast",  sauce: 'Thyme Demi' },
+      { value: 'Vegetarian Feast of the Season', name: 'Vegetarian Feast of the Season', sauce: null },
+    ];
+
+    function optionHTML(opt) {
+      return '<span class="meal-option-name">' + opt.name + '</span>' + (opt.sauce ? '<span class="meal-option-sauce">' + opt.sauce + '</span>' : '');
+    }
+
+    function buildMealSelect() {
+      const wrap = document.createElement('div');
+      wrap.className = 'meal-select';
+      wrap.dataset.value = '';
+
+      const trigger = document.createElement('button');
+      trigger.type = 'button';
+      trigger.className = 'meal-select-trigger';
+      trigger.innerHTML = '<span class="meal-select-placeholder">Select a meal</span>';
+
+      const dropdown = document.createElement('div');
+      dropdown.className = 'meal-select-dropdown';
+
+      mealOptions.forEach(opt => {
+        const item = document.createElement('div');
+        item.className = 'meal-option';
+        item.dataset.value = opt.value;
+        item.innerHTML = optionHTML(opt);
+        item.addEventListener('click', () => {
+          wrap.dataset.value = opt.value;
+          trigger.innerHTML = optionHTML(opt);
+          trigger.classList.add('has-value');
+          dropdown.classList.remove('open');
+        });
+        dropdown.appendChild(item);
+      });
+
+      trigger.addEventListener('click', e => {
+        e.stopPropagation();
+        document.querySelectorAll('.meal-select-dropdown.open').forEach(d => {
+          if (d !== dropdown) d.classList.remove('open');
+        });
+        dropdown.classList.toggle('open');
+      });
+
+      wrap.appendChild(trigger);
+      wrap.appendChild(dropdown);
+      return wrap;
+    }
+
+    document.addEventListener('click', () => {
+      document.querySelectorAll('.meal-select-dropdown.open').forEach(d => d.classList.remove('open'));
+    });
+
     let allGuests = [];
     let selectedGuest = null;
 
@@ -161,8 +201,6 @@
       allGuests = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     }
 
-    // Token-based search: strips "&" and "guest" so "kevin ridge" matches
-    // "Kevin & Mana Ridge", and typing "guest" matches nothing.
     function searchGuests(query) {
       const IGNORE = new Set(['guest', '&']);
       const terms = query.toLowerCase().split(/\s+/).filter(t => t && !IGNORE.has(t));
@@ -173,7 +211,6 @@
       });
     }
 
-    // ── Search UI ─────────────────────────────────────────────────────────────
     const firstInput  = document.getElementById('search-first');
     const lastInput   = document.getElementById('search-last');
     const searchBtn   = document.getElementById('search-btn');
@@ -183,9 +220,8 @@
     const foundName   = document.getElementById('guest-found-name');
     const changeBtn   = document.getElementById('guest-change-btn');
     const rsvpFields  = document.getElementById('rsvp-fields');
-
-    const firstError = document.getElementById('first-error');
-    const lastError  = document.getElementById('last-error');
+    const firstError  = document.getElementById('first-error');
+    const lastError   = document.getElementById('last-error');
 
     function validateField(input, errorEl) {
       if (input.value.trim().length > 0 && input.value.trim().length < 3) {
@@ -196,8 +232,7 @@
     }
 
     function updateSearchBtn() {
-      const ready = firstInput.value.trim().length >= 3 && lastInput.value.trim().length >= 3;
-      searchBtn.disabled = !ready;
+      searchBtn.disabled = !(firstInput.value.trim().length >= 3 && lastInput.value.trim().length >= 3);
     }
 
     firstInput.addEventListener('input', () => { validateField(firstInput, firstError); updateSearchBtn(); });
@@ -206,7 +241,7 @@
     lastInput.addEventListener('blur',   () => validateField(lastInput,  lastError));
 
     function runSearch() {
-      const query = (firstInput.value.trim() + ' ' + lastInput.value.trim());
+      const query = firstInput.value.trim() + ' ' + lastInput.value.trim();
       const matches = searchGuests(query);
       resultsBox.innerHTML = '';
       if (!matches.length) {
@@ -245,38 +280,36 @@
       if (guest.responded) {
         showAlreadyResponded(guest);
       } else {
+        renderGuestRows(guest.members);
         rsvpFields.style.display = 'block';
-        populateGuestCount(guest.maxGuests);
-        document.querySelectorAll('input[name="attending"]').forEach(r => r.checked = false);
-        document.getElementById('guests-group').style.display = 'none';
-        document.getElementById('meal-choices-group').style.display = 'none';
         document.getElementById('form-error').textContent = '';
       }
     }
 
     function showAlreadyResponded(guest) {
       document.getElementById('guest-change-btn').style.display = 'none';
-      const wrap = document.getElementById('rsvp-already-responded');
-      const attendingLine = document.getElementById('summary-attending-line');
-      const mealsWrap = document.getElementById('summary-meals');
-      const mealList = document.getElementById('summary-meal-list');
+      const wrap       = document.getElementById('rsvp-already-responded');
+      const attendLine = document.getElementById('summary-attending-line');
+      const mealsWrap  = document.getElementById('summary-meals');
+      const mealList   = document.getElementById('summary-meal-list');
 
-      if (guest.attending === 'yes') {
-        const count = guest.guests || 1;
-        attendingLine.textContent = `You're coming! (${count} ${count === 1 ? 'guest' : 'guests'})`;
-        if (guest.mealChoices && guest.mealChoices.length) {
-          mealList.innerHTML = guest.mealChoices
-            .map(m => `<li>${m.name || `Guest ${m.guest}`}: ${m.meal}</li>`)
-            .join('');
+      const attending = (guest.members || []).filter(m => m.attending);
+      if (attending.length > 0) {
+        attendLine.textContent = attending.length + ' guest' + (attending.length > 1 ? 's' : '') + ' attending.';
+        const withMeals = attending.filter(m => m.meal);
+        if (withMeals.length) {
+          mealList.innerHTML = withMeals.map(m => '<li>' + (m.name || 'Guest') + ': ' + m.meal + '</li>').join('');
           mealsWrap.style.display = 'block';
+        } else {
+          mealsWrap.style.display = 'none';
         }
       } else {
-        attendingLine.textContent = 'You let us know you\'re unable to attend.';
+        attendLine.textContent = 'Your party let us know they\'re unable to attend.';
         mealsWrap.style.display = 'none';
       }
 
       wrap.style.display = 'block';
-      document.getElementById('rsvp-fields').style.display = 'none';
+      rsvpFields.style.display = 'none';
     }
 
     changeBtn.addEventListener('click', () => {
@@ -289,179 +322,163 @@
       foundWrap.style.display = 'none';
       rsvpFields.style.display = 'none';
       document.getElementById('rsvp-already-responded').style.display = 'none';
+      document.getElementById('guest-rows-container').innerHTML = '';
       lookupGroup.style.display = 'block';
       firstInput.focus();
     });
 
-    // ── Guest count dropdown ──────────────────────────────────────────────────
-    function populateGuestCount(max) {
-      const sel = document.getElementById('guests');
-      sel.innerHTML = '';
-      for (let i = 1; i <= max; i++) {
-        const opt = document.createElement('option');
-        opt.value = i;
-        opt.textContent = i === 1 ? '1 guest' : `${i} guests`;
-        sel.appendChild(opt);
-      }
-    }
-
-    // ── Meal choices ──────────────────────────────────────────────────────────
-    const mealOptions = [
-      { value: 'Grilled Beef Ribeye',           name: 'Grilled Beef Ribeye',           sauce: 'Mushroom Jus' },
-      { value: 'Pan Seared Salmon',              name: 'Pan Seared Salmon',              sauce: 'Citrus Butter Cream' },
-      { value: "Eichner's Farm Chicken Breast",  name: "Eichner's Farm Chicken Breast",  sauce: 'Whole Grain Mustard Demi' },
-      { value: 'Vegetarian Feast of the Season', name: 'Vegetarian Feast of the Season', sauce: null },
-    ];
-
-    function optionHTML(opt) {
-      return `<span class="meal-option-name">${opt.name}</span>${opt.sauce ? `<span class="meal-option-sauce">${opt.sauce}</span>` : ''}`;
-    }
-
-    function renderMealChoices(count) {
-      const container = document.getElementById('meal-choices-container');
+    function renderGuestRows(members) {
+      const container = document.getElementById('guest-rows-container');
       container.innerHTML = '';
-      for (let i = 1; i <= count; i++) {
-        const group = document.createElement('div');
-        group.className = 'meal-guest-group';
 
-        // Name input
-        const nameLabel = document.createElement('label');
-        nameLabel.textContent = i === 1 ? 'Your name' : `Guest ${i} name`;
-        const nameInput = document.createElement('input');
-        nameInput.type = 'text';
-        nameInput.className = 'meal-guest-name';
-        nameInput.dataset.guest = i;
+      const heading = document.createElement('p');
+      heading.className = 'rsvp-count-heading';
+      heading.textContent = 'Can we count you in?';
+      container.appendChild(heading);
 
-        // Meal label + custom select
-        const mealLabel = document.createElement('label');
-        mealLabel.textContent = i === 1 ? 'Your meal' : `Guest ${i} meal`;
-        mealLabel.style.marginTop = '0.75rem';
+      const rowsWrap = document.createElement('div');
+      rowsWrap.className = 'guest-rows-wrap';
 
-        const wrap = document.createElement('div');
-        wrap.className = 'meal-select';
-        wrap.dataset.value = '';
+      members.forEach((member, i) => {
+        const isUnnamed = !member.name;
+        const row = document.createElement('div');
+        row.className = 'guest-row';
 
-        const trigger = document.createElement('button');
-        trigger.type = 'button';
-        trigger.className = 'meal-select-trigger';
-        trigger.innerHTML = '<span class="meal-select-placeholder">Select a meal</span>';
+        // Left column: name (+ name input for unnamed guests)
+        const nameCol = document.createElement('div');
+        nameCol.className = 'guest-row-name-col';
+        const nameEl = document.createElement('p');
+        nameEl.className = 'guest-row-name';
+        nameEl.textContent = member.name || 'Guest';
+        nameCol.appendChild(nameEl);
+        if (isUnnamed) {
+          const inp = document.createElement('input');
+          inp.type = 'text';
+          inp.className = 'guest-name-input';
+          inp.placeholder = 'Enter name*';
+          inp.style.display = 'none';
+          nameCol.appendChild(inp);
+        }
+        row.appendChild(nameCol);
 
-        const dropdown = document.createElement('div');
-        dropdown.className = 'meal-select-dropdown';
+        // Right column: radios + meal dropdown
+        const controlsCol = document.createElement('div');
+        controlsCol.className = 'guest-row-controls';
 
-        mealOptions.forEach(opt => {
-          const item = document.createElement('div');
-          item.className = 'meal-option';
-          item.dataset.value = opt.value;
-          item.innerHTML = optionHTML(opt);
-          item.addEventListener('click', () => {
-            wrap.dataset.value = opt.value;
-            trigger.innerHTML = optionHTML(opt);
-            trigger.classList.add('has-value');
-            dropdown.classList.remove('open');
+        const radioGroup = document.createElement('div');
+        radioGroup.className = 'guest-attend-radios';
+
+        const details = document.createElement('div');
+        details.className = 'guest-row-details';
+        details.style.display = 'none';
+
+        ['yes', 'no'].forEach(val => {
+          const label = document.createElement('label');
+          label.className = 'guest-attend-option';
+
+          const radio = document.createElement('input');
+          radio.type = 'radio';
+          radio.name = 'attend-' + i;
+          radio.value = val;
+
+          const span = document.createElement('span');
+          span.textContent = val === 'yes' ? 'Will Attend' : 'Will Not Attend';
+
+          label.appendChild(radio);
+          label.appendChild(span);
+          radioGroup.appendChild(label);
+
+          radio.addEventListener('change', () => {
+            const show = val === 'yes';
+            details.style.display = show ? 'flex' : 'none';
+            if (isUnnamed) {
+              const inp = nameCol.querySelector('.guest-name-input');
+              if (inp) inp.style.display = show ? 'block' : 'none';
+            }
           });
-          dropdown.appendChild(item);
         });
 
-        trigger.addEventListener('click', e => {
-          e.stopPropagation();
-          document.querySelectorAll('.meal-select-dropdown.open').forEach(d => {
-            if (d !== dropdown) d.classList.remove('open');
-          });
-          dropdown.classList.toggle('open');
-        });
+        controlsCol.appendChild(radioGroup);
+        details.appendChild(buildMealSelect());
+        controlsCol.appendChild(details);
+        row.appendChild(controlsCol);
+        rowsWrap.appendChild(row);
+      });
 
-        wrap.appendChild(trigger);
-        wrap.appendChild(dropdown);
-        group.appendChild(nameLabel);
-        group.appendChild(nameInput);
-        group.appendChild(mealLabel);
-        group.appendChild(wrap);
-        container.appendChild(group);
-      }
+      container.appendChild(rowsWrap);
     }
 
-    document.addEventListener('click', () => {
-      document.querySelectorAll('.meal-select-dropdown.open').forEach(d => d.classList.remove('open'));
-    });
-
-    // ── Attending toggle ──────────────────────────────────────────────────────
-    document.querySelectorAll('input[name="attending"]').forEach(el => {
-      el.addEventListener('change', () => {
-        const show = el.value === 'yes';
-        document.getElementById('guests-group').style.display = show ? 'block' : 'none';
-        document.getElementById('meal-choices-group').style.display = show ? 'block' : 'none';
-        if (show) renderMealChoices(parseInt(document.getElementById('guests').value));
-      });
-    });
-
-    document.getElementById('guests').addEventListener('change', function () {
-      renderMealChoices(parseInt(this.value));
-    });
-
-    // ── Submit ────────────────────────────────────────────────────────────────
     window.submitRSVP = async function () {
-      const attendingEl = document.querySelector('input[name="attending"]:checked');
-      const errorEl     = document.getElementById('form-error');
-      const btn         = document.getElementById('submit-btn');
-
+      const errorEl = document.getElementById('form-error');
+      const btn     = document.getElementById('submit-btn');
       errorEl.textContent = '';
 
       if (!selectedGuest) { errorEl.textContent = 'Please find your name first.'; return; }
-      if (!attendingEl)   { errorEl.textContent = 'Please select whether you\'ll be attending.'; return; }
 
-      const attending = attendingEl.value;
-      const guestCount = attending === 'yes' ? parseInt(document.getElementById('guests').value) : 0;
+      const members = selectedGuest.members;
+      const rows    = document.querySelectorAll('.guest-row');
+      const results = [];
 
-      let mealChoices = [];
-      if (attending === 'yes') {
-        const nameInputs = document.querySelectorAll('.meal-guest-name');
-        const mealSelects = document.querySelectorAll('.meal-select');
-        if (Array.from(nameInputs).some(el => !el.value.trim())) {
-          errorEl.textContent = 'Please enter a name for each guest.';
+      for (let i = 0; i < members.length; i++) {
+        const attendingEl = document.querySelector('input[name="attend-' + i + '"]:checked');
+        if (!attendingEl) {
+          errorEl.textContent = 'Please select an attendance option for ' + (members[i].name || 'Guest ' + (i + 1)) + '.';
           return;
         }
-        mealChoices = Array.from(mealSelects).map((el, i) => ({
-          guest: i + 1,
-          name: nameInputs[i].value.trim(),
-          meal: el.dataset.value
-        }));
-        if (mealChoices.some(m => !m.meal)) {
-          errorEl.textContent = 'Please select a meal for each guest.';
-          return;
+
+        const attending = attendingEl.value === 'yes';
+        const result = { attending, name: members[i].name || null, meal: null };
+
+        if (attending) {
+          if (!members[i].name) {
+            const nameInput = rows[i].querySelector('.guest-name-input');
+            const fullName = nameInput && nameInput.value.trim();
+            if (!fullName) {
+              errorEl.textContent = 'Please enter a name for all attending guests.';
+              return;
+            }
+            result.name = fullName;
+          }
+
+          const mealWrap = rows[i].querySelector('.meal-select');
+          if (!mealWrap || !mealWrap.dataset.value) {
+            errorEl.textContent = 'Please select a meal for ' + (result.name || 'all attending guests') + '.';
+            return;
+          }
+          result.meal = mealWrap.dataset.value;
         }
+
+        results.push(result);
       }
 
-      btn.textContent = 'Sending…';
+      btn.textContent = 'Sending...';
       btn.disabled = true;
 
       const note = document.getElementById('rsvp-note').value.trim();
+      const anyAttending = results.some(r => r.attending);
 
       try {
         await addDoc(collection(db, 'rsvps'), {
-          guestId:   selectedGuest.id,
-          name:      selectedGuest.name,
-          attending,
-          guests:    guestCount,
-          mealChoices,
+          guestId: selectedGuest.id,
+          name:    selectedGuest.name,
+          members: results,
+          anyAttending,
           ...(note && { note }),
           submittedAt: serverTimestamp()
         });
 
         await updateDoc(doc(db, 'guests', selectedGuest.id), {
           responded: true,
-          attending,
-          guests: guestCount,
-          mealChoices
+          members:   results
         });
 
         document.getElementById('rsvp-form-wrap').style.display = 'none';
         document.getElementById('rsvp-subtitle').style.display = 'none';
         document.getElementById('rsvp-success').style.display = 'flex';
 
-        if (attending === 'no') {
+        if (!anyAttending) {
           document.getElementById('success-message').textContent =
-            'We\'ll miss you, but thank you for letting us know.';
+            "We'll miss you, but thank you for letting us know.";
         }
       } catch (err) {
         console.error(err);
@@ -471,9 +488,7 @@
       }
     };
 
-    // ── Init ──────────────────────────────────────────────────────────────────
-    loadGuests().catch(err => {
-      console.error('Failed to load guest list:', err);
+    loadGuests().catch(() => {
       firstInput.placeholder = 'Unable to load — please refresh.';
     });
   </script>

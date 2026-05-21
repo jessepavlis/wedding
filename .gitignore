@@ -1,5 +1,6 @@
 # Firebase service account key — never commit this
 scripts/serviceAccountKey.json
+serviceAccount.json
 
 # Scripts directory (one-time import tools, not needed for the site)
 scripts/
