@@ -17,12 +17,15 @@
     [55,5],[28,48],[71,87],[42,62],[85,44],[7,77],[94,11],[60,29]
   ];
 
-  for (var i = 0; i < placements.length; i++) {
+  var isMobile = window.innerWidth < 600;
+  var count = isMobile ? 6 : placements.length;
+
+  for (var i = 0; i < count; i++) {
     var img = document.createElement('img');
     img.src = srcs[i % 6];
     var size = 36 + Math.floor(Math.random() * 64);
     var rot  = Math.floor(Math.random() * 360);
-    var op   = (0.7 + Math.random() * 0.18).toFixed(2);
+    var op   = (0.45 + Math.random() * 0.18).toFixed(2);
     img.style.cssText =
       'position:absolute;' +
       'top:'    + placements[i][0] + '%;' +
