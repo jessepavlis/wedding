@@ -457,12 +457,18 @@
       const note = document.getElementById('rsvp-note').value.trim();
       const anyAttending = results.some(r => r.attending);
 
+      const summary = results.map(r => {
+        if (!r.attending) return (r.name || 'Guest') + ' — Not Attending';
+        return (r.name || 'Guest') + ' — Attending' + (r.meal ? ' | ' + r.meal : '');
+      }).join('\n');
+
       try {
         await addDoc(collection(db, 'rsvps'), {
           guestId: selectedGuest.id,
           name:    selectedGuest.name,
           members: results,
           anyAttending,
+          summary,
           ...(note && { note }),
           submittedAt: serverTimestamp()
         });
