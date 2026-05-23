@@ -714,6 +714,13 @@ nav a.active {
   transition: background 0.2s;
 }
 
+.registry-desc {
+  font-family: var(--font-slabo);
+  font-size: 0.88rem;
+  line-height: 1.65;
+  color: var(--ink-light);
+}
+
 .registry-card:hover { background: var(--warm-white); }
 
 .registry-icon {
